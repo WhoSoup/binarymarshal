@@ -12,38 +12,35 @@ var reg *registry
 
 func init() {
 	reg = new(registry)
-	reg.encoder = make(map[reflect.Kind]Encoder)
-	reg.decoder = make(map[reflect.Kind]Decoder)
-
-	reg.register(reflect.Int, EncodeInt, nil)
-	reg.register(reflect.String, EncodeString, nil)
+	reg.encoder = make(map[reflect.Type]Encoder)
+	reg.decoder = make(map[reflect.Type]Decoder)
 }
 
 type registry struct {
 	mtx     sync.RWMutex
-	encoder map[reflect.Kind]Encoder
-	decoder map[reflect.Kind]Decoder
+	encoder map[reflect.Type]Encoder
+	decoder map[reflect.Type]Decoder
 }
 
-func (r *registry) register(t reflect.Kind, ef Encoder, df Decoder) {
+func (r *registry) register(t reflect.Type, ef Encoder, df Decoder) {
 	r.mtx.Lock()
 	r.encoder[t] = ef
 	r.decoder[t] = df
 	r.mtx.Unlock()
 }
 
-func (r *registry) getEncoder(t reflect.Kind) Encoder {
+func (r *registry) getEncoder(t reflect.Type) Encoder {
 	r.mtx.RLock()
 	defer r.mtx.RUnlock()
 	return r.encoder[t]
 }
 
-func (r *registry) getDecoder(t reflect.Kind) Decoder {
+func (r *registry) getDecoder(t reflect.Type) Decoder {
 	r.mtx.RLock()
 	defer r.mtx.RUnlock()
 	return r.decoder[t]
 }
 
-func Register(t reflect.Kind, ef Encoder, df Decoder) {
+func Register(t reflect.Type, ef Encoder, df Decoder) {
 	reg.register(t, ef, df)
 }
