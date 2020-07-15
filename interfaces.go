@@ -1,5 +1,5 @@
 package binarymarshal
 
 type Marshallable interface {
-	GetMarshalOrder() []*interface{}
+	GetMarshalOrder() []interface{}
 }
