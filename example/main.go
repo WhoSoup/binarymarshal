@@ -21,7 +21,7 @@ func (t *Test) GetMarshalOrder() []interface{} {
 }
 
 func main() {
-	t := Test{21, "foo"}
+	t := Test{255, "foo"}
 
 	data, err := binarymarshal.Marshal(&t)
 	if err != nil {

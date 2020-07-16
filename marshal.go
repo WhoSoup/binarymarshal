@@ -36,6 +36,10 @@ func marshal(buf *bytes.Buffer, o Marshallable) error {
 				if err := marshal(buf, rec); err != nil {
 					return err
 				}
+			} else if custom, ok := el.Interface().(Custom); ok {
+				if err := custom.Encode(buf); err != nil {
+					return err
+				}
 			} else {
 				return errors.New("marshal order contains unmarshallable struct")
 			}
