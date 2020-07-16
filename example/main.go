@@ -28,4 +28,10 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("%x\n", data)
+
+	tt := new(Test)
+	if err := binarymarshal.Unmarshal(data, tt); err != nil {
+		panic(err)
+	}
+	fmt.Printf("%v\n", tt)
 }

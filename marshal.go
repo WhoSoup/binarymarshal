@@ -22,14 +22,7 @@ func marshal(buf *bytes.Buffer, o Marshallable) error {
 		el := reflect.ValueOf(field).Elem()
 
 		switch el.Kind() {
-		case reflect.Func:
-			if f, ok := el.Interface().(func() []byte); ok {
-				if _, err := buf.Write(f()); err != nil {
-					return err
-				}
-			} else {
-				return errors.New("encountered unknown function")
-			}
+		// todo add errors for func, map?
 		case reflect.Struct:
 			// todo handle infinite loop
 			if rec, ok := el.Interface().(Marshallable); ok {
@@ -44,7 +37,12 @@ func marshal(buf *bytes.Buffer, o Marshallable) error {
 				return errors.New("marshal order contains unmarshallable struct")
 			}
 		case reflect.String:
-			if err := binary.Write(buf, binary.BigEndian, []byte(el.Interface().(string))); err != nil {
+			data := []byte(el.Interface().(string))
+			l := VarInt(uint64(len(data)))
+			if err := l.Marshal(buf); err != nil {
+				return err
+			}
+			if err := binary.Write(buf, binary.BigEndian, data); err != nil {
 				return err
 			}
 		case reflect.Int:
