@@ -23,16 +23,17 @@ func MarshalCustom(order []interface{}) ([]byte, error) {
 
 func marshal(buf *bytes.Buffer, order []interface{}) error {
 	for _, field := range order {
-
-		el := reflect.ValueOf(field).Elem()
-		el = reflect.Indirect(el)
-
 		if custom, ok := field.(Custom); ok {
 			if err := custom.Encode(buf); err != nil {
 				return err
 			}
 			continue
-		} else if rec, ok := el.Addr().Interface().(Marshallable); ok {
+		}
+
+		el := reflect.ValueOf(field).Elem()
+		el = reflect.Indirect(el)
+
+		if rec, ok := el.Addr().Interface().(Marshallable); ok {
 			if err := marshal(buf, rec.GetMarshalOrder()); err != nil {
 				return err
 			}
