@@ -9,32 +9,34 @@ import (
 )
 
 func Marshal(o Marshallable) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
+	return MarshalCustom(o.GetMarshalOrder())
+}
 
-	if err := marshal(buf, o); err != nil {
+func MarshalCustom(order []interface{}) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	if err := marshal(buf, order); err != nil {
 		return nil, err
 	}
 
 	return buf.Bytes(), nil
 }
 
-func marshal(buf *bytes.Buffer, o Marshallable) error {
-	for _, field := range o.GetMarshalOrder() {
+func marshal(buf *bytes.Buffer, order []interface{}) error {
+	for _, field := range order {
+
+		el := reflect.ValueOf(field).Elem()
+		el = reflect.Indirect(el)
 
 		if custom, ok := field.(Custom); ok {
 			if err := custom.Encode(buf); err != nil {
 				return err
 			}
-			return nil
-		} else if rec, ok := field.(Marshallable); ok {
-			if err := marshal(buf, rec); err != nil {
+			continue
+		} else if rec, ok := el.Addr().Interface().(Marshallable); ok {
+			if err := marshal(buf, rec.GetMarshalOrder()); err != nil {
 				return err
 			}
-		}
-
-		el := reflect.ValueOf(field).Elem()
-		if el.Kind() == reflect.Ptr {
-			el = reflect.Indirect(el)
+			continue
 		}
 
 		switch el.Kind() {

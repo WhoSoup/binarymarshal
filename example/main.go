@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/FactomProject/factomd/common/primitives"
 	"github.com/WhoSoup/binarymarshal"
 )
 
@@ -27,12 +28,14 @@ func (t *Test) GetMarshalOrder() []interface{} {
 	return []interface{}{
 		&t.A,
 		&t.B,
-		t.O,
+		&t.O,
 	}
 }
 
 func main() {
-	t := Test{255, "foo", &Other{123}}
+
+	t := Test{255, "foo", &Other{666}}
+	fmt.Println(t, t.O.C)
 
 	data, err := binarymarshal.Marshal(&t)
 	if err != nil {
@@ -44,5 +47,25 @@ func main() {
 	if err := binarymarshal.Unmarshal(data, tt); err != nil {
 		panic(err)
 	}
-	fmt.Printf("%v\n", tt)
+	fmt.Printf("%+v\n%+v\n%+v\n", t, tt, tt.O)
+
+	data, err = binarymarshal.MarshalCustom([]interface{}{&t.A, &t.O.C})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%x\n", data)
+
+	b := new(Test)
+	b.O = new(Other)
+
+	err = binarymarshal.UnmarshalCustom(data, []interface{}{&b.A, &b.O.C})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%+v\n%+v\n", b, b.O)
+
+	bufff := primitives.NewBuffer(nil)
+	bufff.PushInt(t.A)
+	bufff.PushInt(t.O.C)
+	fmt.Printf("%x\n", bufff.Bytes())
 }
