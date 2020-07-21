@@ -33,9 +33,8 @@ func (t *Test) GetMarshalOrder() []interface{} {
 }
 
 func main() {
-
 	t := Test{255, "foo", &Other{666}}
-	fmt.Println(t, t.O.C)
+	fmt.Println(t.A, t.B, t.O.C)
 
 	data, err := binarymarshal.Marshal(&t)
 	if err != nil {
@@ -47,9 +46,9 @@ func main() {
 	if err := binarymarshal.Unmarshal(data, tt); err != nil {
 		panic(err)
 	}
-	fmt.Printf("%+v\n%+v\n%+v\n", t, tt, tt.O)
+	fmt.Println(tt.A, tt.B, tt.O.C)
 
-	data, err = binarymarshal.MarshalCustom([]interface{}{&t.A, &t.O.C})
+	data, err = binarymarshal.MarshalCustom([]interface{}{&t.A, &t.B, &t.O.C})
 	if err != nil {
 		panic(err)
 	}
@@ -58,14 +57,15 @@ func main() {
 	b := new(Test)
 	b.O = new(Other)
 
-	err = binarymarshal.UnmarshalCustom(data, []interface{}{&b.A, &b.O.C})
+	err = binarymarshal.UnmarshalCustom(data, []interface{}{&b.A, &b.B, &b.O.C})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%+v\n%+v\n", b, b.O)
+	fmt.Println(b.A, b.B, b.O.C)
 
 	bufff := primitives.NewBuffer(nil)
 	bufff.PushInt(t.A)
+	bufff.PushString(t.B)
 	bufff.PushInt(t.O.C)
 	fmt.Printf("%x\n", bufff.Bytes())
 }

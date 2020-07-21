@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -76,6 +77,40 @@ func (h *Hash) GetMarshalOrder() []interface{} {
 }
 
 func main() {
+	msg := createMessage()
+
+	// factom's method of binary marshal
+	data1, err := msg.MarshalBinary()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("old: %x\n", data1)
+
+	// new method of marshal
+	data2, err := binarymarshal.Marshal(msg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("new: %x\n", data2)
+
+	// new method of unmarshal
+	msg2 := new(RemoveServerMsg)
+	if err := binarymarshal.Unmarshal(data2, msg2); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("equal?",
+		msg.tyype == msg2.tyype,
+		bytes.Equal(msg.ServerChainID[:], msg2.ServerChainID[:]),
+		msg.ServerType == msg2.ServerType,
+		bytes.Equal(msg.Signature.Pub[:], msg2.Signature.Pub[:]),
+		bytes.Equal(msg.Signature.Sig[:], msg2.Signature.Sig[:]),
+	)
+
+}
+
+func createMessage() *RemoveServerMsg {
 	msg := new(RemoveServerMsg)
 	// 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
 	chain, _ := hex.DecodeString("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
@@ -97,25 +132,7 @@ func main() {
 
 	msg.Timestamp = new(Timestamp)
 	*msg.Timestamp = 0x1111111111111111
-
-	data, err := msg.MarshalBinary()
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("%x\n", data)
-
 	msg.tyype = constants.REMOVESERVER_MSG
-	data, err = binarymarshal.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%x\n", data)
 
-	unm := new(RemoveServerMsg)
-	if err := binarymarshal.Unmarshal(data, unm); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%+v %x %x %x %x\n", unm, (*unm.Timestamp), unm.ServerChainID[:], unm.Signature.Pub[:], unm.Signature.Sig[:])
-
+	return msg
 }

@@ -66,6 +66,13 @@ func unmarshal(buf *bytes.Buffer, order []interface{}) error {
 			}
 		}
 
+		if el.Kind() == reflect.Slice {
+			if err := binary.Read(buf, binary.BigEndian, el.Interface()); err != nil {
+				return err
+			}
+			continue
+		}
+
 		switch el.Elem().Kind() {
 		case reflect.Struct:
 			return errors.New("marshal order contains un-unmarshallable struct")
