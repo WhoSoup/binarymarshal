@@ -52,11 +52,6 @@ func unmarshal(buf *bytes.Buffer, order []interface{}) error {
 			el = el.Elem()
 		}
 
-		/*		if !el.CanSet() && !(el.Kind() == reflect.Ptr && el.Elem().CanSet()) {
-				fmt.Println(el, el.Kind(), el.Type())
-				return fmt.Errorf("unable to set field %v", el.Type())
-			}*/
-
 		if el.Kind() == reflect.Ptr && el.Type().Implements(marshalType) {
 			// the type of el = "*Object", but we want to call new(Object)
 			obj := reflect.New(el.Type().Elem()) // elem() of type = "Object"
@@ -71,7 +66,7 @@ func unmarshal(buf *bytes.Buffer, order []interface{}) error {
 			}
 		}
 
-		switch el.Kind() {
+		switch el.Elem().Kind() {
 		case reflect.Struct:
 			return errors.New("marshal order contains un-unmarshallable struct")
 		case reflect.String:
@@ -89,13 +84,13 @@ func unmarshal(buf *bytes.Buffer, order []interface{}) error {
 				return err
 			}
 
-			el.SetString(string(data))
+			el.Elem().SetString(string(data))
 		case reflect.Int:
 			var z int64
 			if err := binary.Read(buf, binary.BigEndian, &z); err != nil {
 				return err
 			}
-			el.SetInt(z)
+			el.Elem().SetInt(z)
 		default: // see doc for binary.Read. Already works well for the most cases.
 			//fmt.Println(el, el.Kind(), el.Type())
 			if err := binary.Read(buf, binary.BigEndian, el.Interface()); err != nil {
