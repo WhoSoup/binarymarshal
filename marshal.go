@@ -3,7 +3,6 @@ package binarymarshal
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"reflect"
 )
@@ -30,22 +29,27 @@ func marshal(buf *bytes.Buffer, order []interface{}) error {
 			continue
 		}
 
-		el := reflect.ValueOf(field).Elem()
+		el := reflect.ValueOf(field)
+		if el.Kind() == reflect.Ptr || el.Kind() == reflect.Interface {
+			el = el.Elem()
+		}
 		el = reflect.Indirect(el)
 
-		if rec, ok := el.Addr().Interface().(Marshallable); ok {
-			if err := marshal(buf, rec.GetMarshalOrder()); err != nil {
-				return err
+		if el.CanAddr() {
+			if rec, ok := el.Addr().Interface().(Marshallable); ok {
+				if err := marshal(buf, rec.GetMarshalOrder()); err != nil {
+					return err
+				}
+				continue
 			}
-			continue
 		}
 
 		switch el.Kind() {
 		// todo add errors for func, map?
 		case reflect.Struct:
 			// todo handle infinite loop
-			fmt.Println(el.Kind(), el.Type(), el.Interface())
-			return errors.New("marshal order contains unmarshallable struct")
+			//fmt.Println(el.Kind(), el.Type(), el.Interface())
+			return fmt.Errorf("marshal order contains unmarshallable struct %v", el.Type())
 		case reflect.String:
 			data := []byte(el.Interface().(string))
 			l := VarInt(uint64(len(data)))

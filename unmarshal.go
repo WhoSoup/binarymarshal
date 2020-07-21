@@ -9,6 +9,12 @@ import (
 	"reflect"
 )
 
+var marshalType reflect.Type
+
+func init() {
+	marshalType = reflect.TypeOf((*Marshallable)(nil)).Elem()
+}
+
 func Unmarshal(data []byte, o Marshallable) error {
 	return UnmarshalCustom(data, o.GetMarshalOrder())
 }
@@ -32,22 +38,26 @@ func unmarshal(buf *bytes.Buffer, order []interface{}) error {
 				return err
 			}
 			continue
-		}
-
-		ptr := reflect.ValueOf(field) // a pointer that points to the variable that needs to be set
-		el := ptr.Elem()              // the element the pointer is pointing to
-		if !el.CanSet() {
-			return fmt.Errorf("unable to set field %v", el)
-		}
-
-		// this is true if the order contains "&Object{...}"
-		if mm, ok := field.(Marshallable); ok {
+		} else if mm, ok := field.(Marshallable); ok {
 			if err := unmarshal(buf, mm.GetMarshalOrder()); err != nil {
 				return err
 			}
 			continue
-		} else if el.Kind() == reflect.Ptr {
-			// check if the order contains something like "&&Object{...}" aka pointer to a pointer
+		}
+
+		el := reflect.ValueOf(field) // a pointer that points to the variable that needs to be set
+
+		// remove double pointers, **Obj => *Obj
+		if el.Kind() == reflect.Ptr && el.Elem().Kind() == reflect.Ptr {
+			el = el.Elem()
+		}
+
+		/*		if !el.CanSet() && !(el.Kind() == reflect.Ptr && el.Elem().CanSet()) {
+				fmt.Println(el, el.Kind(), el.Type())
+				return fmt.Errorf("unable to set field %v", el.Type())
+			}*/
+
+		if el.Kind() == reflect.Ptr && el.Type().Implements(marshalType) {
 			// the type of el = "*Object", but we want to call new(Object)
 			obj := reflect.New(el.Type().Elem()) // elem() of type = "Object"
 			if marshallable, ok := obj.Interface().(Marshallable); ok {
@@ -87,6 +97,7 @@ func unmarshal(buf *bytes.Buffer, order []interface{}) error {
 			}
 			el.SetInt(z)
 		default: // see doc for binary.Read. Already works well for the most cases.
+			//fmt.Println(el, el.Kind(), el.Type())
 			if err := binary.Read(buf, binary.BigEndian, el.Interface()); err != nil {
 				return err
 			}

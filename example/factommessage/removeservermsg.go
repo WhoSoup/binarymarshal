@@ -12,7 +12,7 @@ import (
 type RemoveServerMsg struct {
 	Timestamp     *Timestamp // Message Timestamp
 	ServerChainID *Hash      // ChainID of new server
-	ServerType    int        // 0 = Federated, 1 = Audit
+	ServerType    byte       // 0 = Federated, 1 = Audit
 
 	Signature *Signature
 
@@ -48,7 +48,7 @@ func (r *RemoveServerMsg) UnmarshalBinaryData(data []byte) (newData []byte, err 
 		return nil, err
 	}
 
-	r.ServerType = int(newData[0])
+	r.ServerType = byte(newData[0])
 	newData = newData[1:]
 
 	if len(newData) > 32 {

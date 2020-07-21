@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 
 	"github.com/FactomProject/factomd/common/constants"
 	"github.com/WhoSoup/binarymarshal"
@@ -105,10 +106,16 @@ func main() {
 	fmt.Printf("%x\n", data)
 
 	msg.tyype = constants.REMOVESERVER_MSG
-	/*data, err = binarymarshal.Marshal(msg)
+	data, err = binarymarshal.Marshal(msg)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%x\n", data)*/
+	fmt.Printf("%x\n", data)
+
+	unm := new(RemoveServerMsg)
+	if err := binarymarshal.Unmarshal(data, unm); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%+v %x %x %x %x\n", unm, (*unm.Timestamp), unm.ServerChainID[:], unm.Signature.Pub[:], unm.Signature.Sig[:])
 
 }
