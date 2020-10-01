@@ -47,7 +47,6 @@ func unmarshal(buf *bytes.Buffer, order []interface{}) error {
 
 		el := reflect.ValueOf(field) // a pointer that points to the variable that needs to be set
 
-		// remove double pointers, **Obj => *Obj
 		if el.Kind() == reflect.Ptr && el.Elem().Kind() == reflect.Ptr {
 			el = el.Elem()
 		}
